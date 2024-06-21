@@ -8,6 +8,8 @@ dotenv.config();
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const PORT = process.env.PORT || 3000;
 
+let qrCodeDataURL = '';
+
 // Function to get response from OpenAI API
 async function getOpenAIResponse(message) {
     try {
@@ -38,8 +40,8 @@ const client = new Client({
 });
 
 client.on('qr', async (qr) => {
-    // Save QR code as image
-    await qrcode.toFile('./qr.png', qr);
+    // Generate QR code as data URL
+    qrCodeDataURL = await qrcode.toDataURL(qr);
     console.log('QR code generated, please scan it with your WhatsApp');
 });
 
@@ -63,8 +65,10 @@ client.initialize();
 // Simple HTTP server to keep the app alive
 const app = express();
 
-// Serve the QR code image at /qr.png
-app.use('/qr.png', express.static('qr.png'));
+// Serve the QR code image at /qr
+app.get('/qr', (req, res) => {
+    res.send(`<img src="${qrCodeDataURL}" alt="QR Code">`);
+});
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
