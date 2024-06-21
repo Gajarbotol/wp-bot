@@ -1,5 +1,5 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
+const qrcode = require('qrcode');
 const axios = require('axios');
 const express = require('express');
 const dotenv = require('dotenv');
@@ -37,13 +37,17 @@ const client = new Client({
     authStrategy: new LocalAuth()
 });
 
-client.on('qr', (qr) => {
-    qrcode.generate(qr, { small: true });
+client.on('qr', async (qr) => {
+    // Save QR code as image
+    await qrcode.toFile('./qr.png', qr);
     console.log('QR code generated, please scan it with your WhatsApp');
 });
 
 client.on('ready', () => {
     console.log('Client is ready!');
+    app.get('/', (req, res) => {
+        res.send('WhatsApp GPT Running on server');
+    });
 });
 
 client.on('message', async message => {
@@ -59,9 +63,8 @@ client.initialize();
 // Simple HTTP server to keep the app alive
 const app = express();
 
-app.get('/', (req, res) => {
-    res.send('WhatsApp bot is running');
-});
+// Serve the QR code image at /qr.png
+app.use('/qr.png', express.static('qr.png'));
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
