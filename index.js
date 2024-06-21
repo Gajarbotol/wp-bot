@@ -40,16 +40,17 @@ const client = new Client({
 });
 
 client.on('qr', async (qr) => {
-    // Generate QR code as data URL
-    qrCodeDataURL = await qrcode.toDataURL(qr);
-    console.log('QR code generated, please scan it with your WhatsApp');
+    try {
+        // Generate QR code as data URL
+        qrCodeDataURL = await qrcode.toDataURL(qr);
+        console.log('QR code generated, please scan it with your WhatsApp');
+    } catch (error) {
+        console.error('Error generating QR code:', error);
+    }
 });
 
 client.on('ready', () => {
     console.log('Client is ready!');
-    app.get('/', (req, res) => {
-        res.send('WhatsApp GPT Running on server');
-    });
 });
 
 client.on('message', async message => {
@@ -68,6 +69,14 @@ const app = express();
 // Serve the QR code image at /qr
 app.get('/qr', (req, res) => {
     res.send(`<img src="${qrCodeDataURL}" alt="QR Code">`);
+});
+
+app.get('/', (req, res) => {
+    if (client.state === 'authenticated') {
+        res.send('WhatsApp GPT Running on server');
+    } else {
+        res.send('Waiting for WhatsApp authentication...');
+    }
 });
 
 app.listen(PORT, () => {
